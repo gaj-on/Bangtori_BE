@@ -15,17 +15,17 @@ import java.util.HashMap;
 @Service
 @RequiredArgsConstructor
 public class TelemetryService {
-    private final DeviceRepository deviceRepo;
     private final TelemetryRepository teleRepo;
 
-    public void ingest(String roomId, TelemetryDTO dto) {
-        deviceRepo.findById(dto.getSn()).orElseGet(() ->
-                deviceRepo.save(Device.builder()
-                        .sn(dto.getSn()).roomId(roomId).status("online").createdAt(Instant.now()).build()));
+    public void ingest(TelemetryDTO dto) {
         teleRepo.save(Telemetry.builder()
-                .deviceSn(dto.getSn())
-                .ts(Instant.ofEpochSecond(dto.getTs()))
                 .sensors(new HashMap<>(dto.getMetrics()))
                 .build());
+    }
+
+    public Object getLatestAttribute(String attribute) {
+        Telemetry latest = teleRepo.findTopByOrderByIdDesc()  // 최근 값 가져오기
+                .orElseThrow(() -> new RuntimeException("No telemetry data found"));
+        return latest.getSensors().get(attribute);
     }
 }

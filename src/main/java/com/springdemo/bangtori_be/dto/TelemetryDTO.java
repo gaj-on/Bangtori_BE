@@ -8,10 +8,5 @@ import java.util.Map;
 
 @Data
 public class TelemetryDTO {
-    @NotBlank
-    private String sn;
-    @NotNull
-    private Long ts;
-    @NotNull
     private Map<String, Double> metrics;
 }
