@@ -19,6 +19,7 @@ public class TelemetryService {
 
     public void ingest(TelemetryDTO dto) {
         teleRepo.save(Telemetry.builder()
+                .createdAt(Instant.now())  // 저장 시각 기록
                 .sensors(new HashMap<>(dto.getMetrics()))
                 .build());
     }

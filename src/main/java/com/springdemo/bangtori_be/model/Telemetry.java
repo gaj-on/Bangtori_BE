@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 
+import java.time.Instant;
 import java.util.Map;
 
 
@@ -20,5 +21,6 @@ public class Telemetry {
     @Id
     private String id;
 
+    private Instant createdAt;   // 데이터 저장 시각
     private Map<String,Object> sensors; // {temp,humi,dust,tvoc,co2}
 }
