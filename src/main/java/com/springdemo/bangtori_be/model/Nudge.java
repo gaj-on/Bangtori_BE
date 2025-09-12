@@ -19,10 +19,10 @@ import java.time.Instant;
 public class Nudge {
     @Id
     private String id;
-    private String userId;           // MVP: 고정 "u1"
-    private String type;             // score_low, tag_repeat...
+    private String userId;
+    private String type;
     private String message;
-    private String status;           // pending, ack
+    private String status;
     private Instant createdAt;
     private Instant ackAt;
 }

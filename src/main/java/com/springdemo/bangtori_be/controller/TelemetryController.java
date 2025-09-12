@@ -44,5 +44,10 @@ public class TelemetryController {
     public ResponseEntity<Object> getCo2() {
         return ResponseEntity.ok(telemetryService.getLatestAttribute("co2"));
     }
+
+    @GetMapping("/timestamp")
+    public ResponseEntity<Object> getLatestDTO() { return ResponseEntity.ok(telemetryService.getLatestDTO()); }
+
+
 }
 

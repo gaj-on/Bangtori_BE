@@ -16,6 +16,8 @@ import java.util.HashMap;
 @RequiredArgsConstructor
 public class TelemetryService {
     private final TelemetryRepository teleRepo;
+    Telemetry latest = teleRepo.findTopByOrderByIdDesc()  // 최근 값 가져오기
+            .orElseThrow(() -> new RuntimeException("No telemetry data found"));
 
     public void ingest(TelemetryDTO dto) {
         teleRepo.save(Telemetry.builder()
@@ -25,8 +27,10 @@ public class TelemetryService {
     }
 
     public Object getLatestAttribute(String attribute) {
-        Telemetry latest = teleRepo.findTopByOrderByIdDesc()  // 최근 값 가져오기
-                .orElseThrow(() -> new RuntimeException("No telemetry data found"));
         return latest.getSensors().get(attribute);
+    }
+
+    public Object getLatestDTO() {
+        return latest;
     }
 }
