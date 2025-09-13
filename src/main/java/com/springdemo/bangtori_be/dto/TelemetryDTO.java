@@ -9,4 +9,5 @@ import java.util.Map;
 @Data
 public class TelemetryDTO {
     private Map<String, Double> metrics;
+    private Long time;
 }

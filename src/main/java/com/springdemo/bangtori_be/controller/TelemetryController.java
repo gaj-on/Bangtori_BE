@@ -48,6 +48,22 @@ public class TelemetryController {
     @GetMapping("/timestamp")
     public ResponseEntity<Object> getLatestDTO() { return ResponseEntity.ok(telemetryService.getLatestDTO()); }
 
+    // 하루 시계열: 기본값은 '오늘(Asia/Seoul)'
+    @GetMapping("/daily")
+    public ResponseEntity<Object> getDaily(@RequestParam(required = false) String date) {
+        return ResponseEntity.ok(telemetryService.getDailySeries(date)); // date: "YYYY-MM-DD"
+    }
 
+    // 한 달 시계열: 기본값은 '이번 달(Asia/Seoul)'
+    @GetMapping("/monthly")
+    public ResponseEntity<Object> getMonthly(@RequestParam(required = false, name = "month") String yearMonth) {
+        return ResponseEntity.ok(telemetryService.getMonthlySeries(yearMonth)); // month: "YYYY-MM"
+    }
+
+    // (선택) 임의 범위 시계열: from/to는 epoch seconds, [from, toExclusive)
+    @GetMapping("/range")
+    public ResponseEntity<Object> getRange(@RequestParam long from, @RequestParam long toExclusive) {
+        return ResponseEntity.ok(telemetryService.getRangeSeries(from, toExclusive));
+    }
 }
 

@@ -6,9 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
-
-import java.time.Instant;
 import java.util.Map;
 
 
@@ -21,6 +20,8 @@ public class Telemetry {
     @Id
     private String id;
 
-    private Instant createdAt;   // 데이터 저장 시각
+    @Indexed(name = "time_idx")
+    private long time; // 측정 시각(Unix epoch seconds)
+
     private Map<String,Object> sensors; // {temp,humi,dust,tvoc,co2}
 }
