@@ -1,9 +1,12 @@
 package com.springdemo.bangtori_be.controller;
 
+import com.springdemo.bangtori_be.dto.ApplianceCommandResponse;
 import com.springdemo.bangtori_be.dto.ApplianceDTO;
 import com.springdemo.bangtori_be.model.Appliance;
 import com.springdemo.bangtori_be.repository.ApplianceRepository;
+import com.springdemo.bangtori_be.service.ApplianceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -15,6 +18,7 @@ import java.util.List;
 public class ApplianceController {
 
     private final ApplianceRepository applianceRepository;
+    private final ApplianceService applianceService;
 
     private long now() { return Instant.now().getEpochSecond(); }
 
@@ -34,4 +38,18 @@ public class ApplianceController {
     public List<Appliance> list() {
         return applianceRepository.findAll();
     }
+
+
+    // controller/ApplianceController.java (setPower 전용 엔드포인트 추가)
+    @PostMapping("/power")
+    public ResponseEntity<ApplianceCommandResponse> setPower(@RequestBody ApplianceDTO dto) {
+        ApplianceCommandResponse res = applianceService.setPower(dto);
+        if (Boolean.TRUE.equals(res.getAck())) {
+            return ResponseEntity.ok(res);
+        } else {
+            // 아두이노 미응답/실패 → 502 Bad Gateway
+            return ResponseEntity.status(502).body(res);
+        }
+    }
+
 }

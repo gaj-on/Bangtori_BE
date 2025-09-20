@@ -1,6 +1,7 @@
 package com.springdemo.bangtori_be.model;
 
 import lombok.*;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -14,6 +15,7 @@ public class Appliance extends BaseDocument {
     // 3. HEAT (난방)
     public enum ApplianceType { FAN, AC, ROBOT, HEAT }
 
+    @Indexed(unique = true)
     private ApplianceType type;
     private boolean isOn;
 }
