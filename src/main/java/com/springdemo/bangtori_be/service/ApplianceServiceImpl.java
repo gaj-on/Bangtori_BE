@@ -15,7 +15,7 @@ import java.time.Instant;
 public class ApplianceServiceImpl implements ApplianceService {
 
     private final ApplianceRepository applianceRepository;
-    private final ArduinoGateway arduinoGateway;
+    // private final ArduinoGateway arduinoGateway;
 
     private long now() { return Instant.now().getEpochSecond(); }
 
@@ -30,7 +30,8 @@ public class ApplianceServiceImpl implements ApplianceService {
         boolean requestedOn = Boolean.TRUE.equals(dto.getIsOn());
 
         // 1) 아두이노에 명령 전송
-        boolean ack = arduinoGateway.setPower(type, requestedOn);
+        // boolean ack = arduinoGateway.setPower(type, requestedOn);
+        boolean ack = true; // TODO: 임시로 항상 ACK true 처리
 
         Appliance saved = null;
         boolean applied = false;
