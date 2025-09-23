@@ -20,17 +20,17 @@ public class ApplianceController {
 
     private long now() { return Instant.now().getEpochSecond(); }
 
-    @PostMapping
-    public Appliance create(@RequestBody ApplianceDTO dto) {
-        Appliance a = Appliance.builder()
-                .type(dto.getType() == null
-                        ? Appliance.ApplianceType.FAN
-                        : Appliance.ApplianceType.valueOf(dto.getType().name()))
-                .isOn(Boolean.TRUE.equals(dto.getIsOn()))
-                .build();
-        a.setCreatedAt(now());
-        return applianceRepository.save(a);
-    }
+//    @PostMapping
+//    public Appliance create(@RequestBody ApplianceDTO dto) {
+//        Appliance a = Appliance.builder()
+//                .type(dto.getType() == null
+//                        ? Appliance.ApplianceType.FAN
+//                        : Appliance.ApplianceType.valueOf(dto.getType().name()))
+//                .isOn(Boolean.TRUE.equals(dto.getIsOn()))
+//                .build();
+//        a.setCreatedAt(now());
+//        return applianceRepository.save(a);
+//    }
 
     @GetMapping
     public List<Appliance> list() {

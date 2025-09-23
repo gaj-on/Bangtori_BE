@@ -17,5 +17,6 @@ public class Appliance extends BaseDocument {
 
     @Indexed(unique = true)
     private ApplianceType type;
+
     private boolean isOn;
 }
