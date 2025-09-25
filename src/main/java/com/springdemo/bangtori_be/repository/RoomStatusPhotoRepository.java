@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface RoomStatusPhotoRepository extends MongoRepository<RoomStatusPhoto, String> {
 
     Optional<RoomStatusPhoto> findTopByOrderByCreatedAtDesc();
+    Optional<RoomStatusPhoto> findLatestWithImage();
 
     Optional<RoomStatusPhoto> findByDateAndTimeOfDay(LocalDate date, TimeOfDay slot);
 }

@@ -19,6 +19,7 @@ public class CctvController {
     private final CctvService cctvService;
 
     /** Base64 업로드 (data:image/...;base64,xxx 또는 순수 base64) */
+    // CctvController.java (/upload-base64만 수정)
     @PostMapping("/upload-base64")
     public ResponseEntity<String> uploadBase64(@RequestBody Map<String, String> body,
                                                @RequestParam(required = false) TimeOfDay slot) {
@@ -26,9 +27,16 @@ public class CctvController {
         if (b64 == null || b64.isBlank()) {
             return ResponseEntity.badRequest().body("imageBase64 required");
         }
-        RoomStatusPhoto saved = cctvService.saveBase64(b64, slot);
-        return ResponseEntity.ok(saved.getTimeOfDay() + " uploaded at " + saved.getCreatedAt());
+        try {
+            RoomStatusPhoto saved = cctvService.saveBase64(b64, slot);
+            return ResponseEntity.ok(saved.getTimeOfDay() + " uploaded at " + saved.getCreatedAt());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body("Invalid image payload: " + ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Upload failed");
+        }
     }
+
 
     /** 최신 1장 */
     @GetMapping("/latest")

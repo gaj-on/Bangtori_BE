@@ -25,7 +25,8 @@ public class CctvService {
     /* ========== 조회 ========== */
 
     public Optional<RoomStatusPhoto> findLatest() {
-        return repo.findTopByOrderByCreatedAtDesc();
+        return repo.findLatestWithImage()
+                .filter(s -> s.getImage() != null && s.getImage().length > 0);
     }
 
     public Optional<RoomStatusPhoto> findTodaySlot(RoomStatusPhoto.TimeOfDay slot) {
@@ -44,13 +45,29 @@ public class CctvService {
      * - 서버에서 무조건 JPEG로 재인코딩하여 저장
      * - slot이 null이면 현재 시간대 기준으로 자동 결정
      */
+    // CctvService.java (saveBase64 교체)
     public RoomStatusPhoto saveBase64(String dataUrlOrBase64, TimeOfDay requestedSlot) {
         // 1) 접두부 제거 + 디코딩
         String b64 = stripDataUrlPrefix(dataUrlOrBase64);
-        byte[] raw = Base64.getDecoder().decode(b64);
+        if (b64 == null || b64.isBlank()) {
+            throw new IllegalArgumentException("imageBase64 is empty");
+        }
+        byte[] raw;
+        try {
+            raw = Base64.getDecoder().decode(b64);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("imageBase64 decode failed", e);
+        }
+        if (raw.length == 0) {
+            throw new IllegalArgumentException("decoded image is empty");
+        }
 
-        // 2) 이미지 디코드 -> JPEG로 재인코딩
-        byte[] jpegBytes = toJpeg(readImage(raw));
+        // 2) 이미지 디코딩 → JPEG 재인코딩
+        BufferedImage bi = readImage(raw);          // read 실패 시 IllegalArgumentException
+        byte[] jpegBytes = toJpeg(bi);
+        if (jpegBytes == null || jpegBytes.length == 0) {
+            throw new IllegalStateException("JPEG encode produced empty bytes");
+        }
 
         // 3) 날짜/슬롯 결정 및 업서트
         LocalDate today = LocalDate.now(ZONE);
@@ -68,6 +85,7 @@ public class CctvService {
 
         return repo.save(doc);
     }
+
 
     /* ========== 내부 유틸 ========== */
 
