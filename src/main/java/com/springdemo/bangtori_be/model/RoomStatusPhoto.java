@@ -10,7 +10,6 @@ import java.time.LocalDate;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @Document("room_status_photos")
-@CompoundIndex(name = "uniq_date_slot", def = "{'date':1,'timeOfDay':1}", unique = true)
 public class RoomStatusPhoto extends BaseDocument {
 
     public enum TimeOfDay { MORNING, LUNCH, EVENING }

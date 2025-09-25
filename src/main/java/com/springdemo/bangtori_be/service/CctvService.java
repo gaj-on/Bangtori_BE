@@ -59,11 +59,10 @@ public class CctvService {
         LocalDate today = LocalDate.now(ZONE);
         TimeOfDay slot = (requestedSlot != null) ? requestedSlot : resolveSlot(LocalTime.now(ZONE));
 
-        RoomStatusPhoto doc = repo.findByDateAndTimeOfDay(today, slot)
-                .orElse(RoomStatusPhoto.builder()
-                        .date(today)
-                        .timeOfDay(slot)
-                        .build());
+        RoomStatusPhoto doc = RoomStatusPhoto.builder()
+                .date(today)
+                .timeOfDay(slot)   // 원하면 유지, 필요 없다면 제거 가능
+                .build();
 
         // JPEG 변환 대신 그대로 저장
         doc.setImage(raw);
