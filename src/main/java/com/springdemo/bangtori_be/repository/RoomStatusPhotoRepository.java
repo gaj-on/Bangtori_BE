@@ -1,4 +1,3 @@
-// src/main/java/com/springdemo/bangtori_be/repository/RoomStatusPhotoRepository.java
 package com.springdemo.bangtori_be.repository;
 
 import com.springdemo.bangtori_be.model.RoomStatusPhoto;
@@ -10,8 +9,8 @@ import java.util.Optional;
 
 public interface RoomStatusPhotoRepository extends MongoRepository<RoomStatusPhoto, String> {
 
+    // createdAt 최신 1건
     Optional<RoomStatusPhoto> findTopByOrderByCreatedAtDesc();
-    Optional<RoomStatusPhoto> findLatestWithImage();
 
     Optional<RoomStatusPhoto> findByDateAndTimeOfDay(LocalDate date, TimeOfDay slot);
 }

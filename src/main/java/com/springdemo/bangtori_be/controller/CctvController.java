@@ -21,21 +21,32 @@ public class CctvController {
     /** Base64 업로드 (data:image/...;base64,xxx 또는 순수 base64) */
     // CctvController.java (/upload-base64만 수정)
     @PostMapping("/upload-base64")
-    public ResponseEntity<String> uploadBase64(@RequestBody Map<String, String> body,
-                                               @RequestParam(required = false) TimeOfDay slot) {
+    public ResponseEntity<Map<String, Object>> uploadBase64(
+            @RequestBody Map<String, String> body,
+            @RequestParam(required = false) RoomStatusPhoto.TimeOfDay slot
+    ) {
         String b64 = body.get("imageBase64");
         if (b64 == null || b64.isBlank()) {
-            return ResponseEntity.badRequest().body("imageBase64 required");
+            return ResponseEntity.badRequest().body(Map.of("error", "imageBase64 required"));
         }
-        try {
-            RoomStatusPhoto saved = cctvService.saveBase64(b64, slot);
-            return ResponseEntity.ok(saved.getTimeOfDay() + " uploaded at " + saved.getCreatedAt());
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body("Invalid image payload: " + ex.getMessage());
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Upload failed");
-        }
+
+        RoomStatusPhoto saved = cctvService.saveBase64(b64, slot);
+
+        // byte[] → Base64 다시 변환해서 응답에 포함
+        String encoded = java.util.Base64.getEncoder().encodeToString(saved.getImage());
+
+        Map<String, Object> response = Map.of(
+                "id", saved.getId(),
+                "date", saved.getDate(),
+                "slot", saved.getTimeOfDay(),
+                "imageBase64", encoded,
+                "size", saved.getImage() != null ? saved.getImage().length : 0,
+                "createdAt", saved.getCreatedAt()
+        );
+
+        return ResponseEntity.ok(response);
     }
+
 
 
     /** 최신 1장 */
@@ -43,6 +54,7 @@ public class CctvController {
     public ResponseEntity<byte[]> latest() {
         return cctvService.findLatest()
                 .map(snap -> ResponseEntity.ok()
+                        // 저장된 contentType 사용 가능하면 교체: snap.getContentType()
                         .contentType(MediaType.IMAGE_JPEG)
                         .body(snap.getImage()))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());

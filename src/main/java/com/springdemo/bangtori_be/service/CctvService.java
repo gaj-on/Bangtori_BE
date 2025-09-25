@@ -25,8 +25,8 @@ public class CctvService {
     /* ========== 조회 ========== */
 
     public Optional<RoomStatusPhoto> findLatest() {
-        return repo.findLatestWithImage()
-                .filter(s -> s.getImage() != null && s.getImage().length > 0);
+        return repo.findTopByOrderByCreatedAtDesc()
+                .filter(p -> p.getImage() != null && p.getImage().length > 0);
     }
 
     public Optional<RoomStatusPhoto> findTodaySlot(RoomStatusPhoto.TimeOfDay slot) {
