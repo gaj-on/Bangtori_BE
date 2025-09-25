@@ -1,137 +1,90 @@
+// src/main/java/com/springdemo/bangtori_be/service/CctvService.java
 package com.springdemo.bangtori_be.service;
 
-import com.springdemo.bangtori_be.dto.PhotoDTO;
 import com.springdemo.bangtori_be.model.RoomStatusPhoto;
 import com.springdemo.bangtori_be.model.RoomStatusPhoto.TimeOfDay;
 import com.springdemo.bangtori_be.repository.RoomStatusPhotoRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.time.*;
+import java.util.Base64;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class CctvService {
 
     private final RoomStatusPhotoRepository repo;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
 
-    private static final ZoneId ZONE = ZoneId.of("Asia/Seoul"); // 🇰🇷
-    private static final String SNAPSHOT_URL = "http://172.xx.xx.xx/snapshot.jpg";
-    // 필요시 BasicAuth 헤더 등 추가
+    /* ========== 조회 ========== */
 
-    public RoomStatusPhoto captureAndSave() {
-        byte[] img = restTemplate.getForObject(SNAPSHOT_URL, byte[].class);
-        long now = Instant.now().getEpochSecond();
-
-        TimeOfDay slot = resolveSlot(Instant.ofEpochSecond(now));
-
-        // 같은 날짜/슬롯은 1장만 유지: 기존 것들 삭제 후 새로 저장(업서트 느낌)
-        long start = LocalDate.now(ZONE).atStartOfDay(ZONE).toEpochSecond();
-        long next  = LocalDate.now(ZONE).plusDays(1).atStartOfDay(ZONE).toEpochSecond();
-
-        repo.findAllByDateRangeAndSlot(start, next, slot)
-                .forEach(p -> repo.deleteById(p.getId()));
-
-        RoomStatusPhoto photo = RoomStatusPhoto.builder()
-                .timeOfDay(slot)
-                .image(img)
-                .build();
-        photo.setCreatedAt(now);
-        return repo.save(photo);
+    public Optional<RoomStatusPhoto> findLatest() {
+        return repo.findTopByOrderByCreatedAtDesc();
     }
 
-    public RoomStatusPhoto getLatest() {
-        return repo.findTopByOrderByCreatedAtDesc()
-                .orElseThrow(() -> new IllegalStateException("No snapshot found"));
+    public Optional<RoomStatusPhoto> findTodaySlot(RoomStatusPhoto.TimeOfDay slot) {
+        LocalDate today = LocalDate.now(ZONE);
+        return repo.findByDateAndTimeOfDay(today, slot);
     }
 
-    public RoomStatusPhoto getTodaySlot(TimeOfDay slot) {
-        long start = LocalDate.now(ZONE).atStartOfDay(ZONE).toEpochSecond();
-        long next  = LocalDate.now(ZONE).plusDays(1).atStartOfDay(ZONE).toEpochSecond();
-        return repo.findOneByDateRangeAndSlot(start, next, slot)
-                .orElseThrow(() -> new IllegalStateException("No snapshot for " + slot));
+    public Optional<RoomStatusPhoto> findDateSlot(LocalDate date, RoomStatusPhoto.TimeOfDay slot) {
+        return repo.findByDateAndTimeOfDay(date, slot);
     }
 
-    public RoomStatusPhoto getDateSlot(LocalDate date, TimeOfDay slot) {
-        long start = date.atStartOfDay(ZONE).toEpochSecond();
-        long next  = date.plusDays(1).atStartOfDay(ZONE).toEpochSecond();
-        return repo.findOneByDateRangeAndSlot(start, next, slot)
-                .orElseThrow(() -> new IllegalStateException("No snapshot for " + date + " " + slot));
-    }
+    /* ========== 저장(Base64만) ========== */
 
-    /** 슬롯 규칙(원하시면 조정 가능)
-     *  MORNING: 06:00–10:59
-     *  LUNCH  : 11:00–13:59
-     *  EVENING: 18:00–20:59
-     *  그 외 시간엔 가장 가까운 슬롯으로 지정하고 싶으면 분기 추가
+    /**
+     * data:image/...;base64,xxx 또는 순수 base64 둘 다 허용
+     * - 서버에서 무조건 JPEG로 재인코딩하여 저장
+     * - slot이 null이면 현재 시간대 기준으로 자동 결정
      */
-    private TimeOfDay resolveSlot(Instant instant) {
-        LocalTime t = instant.atZone(ZONE).toLocalTime();
-        if (!t.isBefore(LocalTime.of(11,0))) {
-            if (t.isBefore(LocalTime.of(14,0))) return TimeOfDay.LUNCH;
-        }
-        if (!t.isBefore(LocalTime.of(18,0))) {
-            if (t.isBefore(LocalTime.of(21,0))) return TimeOfDay.EVENING;
-        }
-        return TimeOfDay.MORNING;
+    public RoomStatusPhoto saveBase64(String dataUrlOrBase64, TimeOfDay requestedSlot) {
+        // 1) 접두부 제거 + 디코딩
+        String b64 = stripDataUrlPrefix(dataUrlOrBase64);
+        byte[] raw = Base64.getDecoder().decode(b64);
+
+        // 2) 이미지 디코드 -> JPEG로 재인코딩
+        byte[] jpegBytes = toJpeg(readImage(raw));
+
+        // 3) 날짜/슬롯 결정 및 업서트
+        LocalDate today = LocalDate.now(ZONE);
+        TimeOfDay slot = (requestedSlot != null) ? requestedSlot : resolveSlot(LocalTime.now(ZONE));
+
+        RoomStatusPhoto doc = repo.findByDateAndTimeOfDay(today, slot)
+                .orElse(RoomStatusPhoto.builder()
+                        .date(today)
+                        .timeOfDay(slot)
+                        .build());
+
+        doc.setImage(jpegBytes);
+        doc.setContentType("image/jpeg");
+        doc.setCreatedAt(Instant.now().getEpochSecond());
+
+        return repo.save(doc);
     }
 
-    // (선택) 자동 캡처: 매일 09:00 / 12:00 / 19:00
-    @Scheduled(cron = "0 0 9,12,19 * * *", zone = "Asia/Seoul")
-    public void scheduledCapture() { captureAndSave(); }
+    /* ========== 내부 유틸 ========== */
 
-
-    // (이미 앞서 구현해둔) 업로드 저장 재사용
-    public RoomStatusPhoto saveUploadedImage(byte[] jpegBytes, RoomStatusPhoto.TimeOfDay slot) {
-        // ... 앞서 드린 saveUploadedImage(byte[], slot) 그대로 사용 ...
-        // (동일 날짜+슬롯 1장 유지 로직 포함)
-        throw new UnsupportedOperationException("reuse previous saveUploadedImage implementation");
+    private static String stripDataUrlPrefix(String s) {
+        int idx = s.indexOf("base64,");
+        return (idx >= 0) ? s.substring(idx + "base64,".length()) : s;
     }
 
-
-
-    // ----- 행렬 사용 파트 ----- //
-
-    /** JSON 행렬 → JPEG 바이트 */
-    public byte[] matrixToJpeg(PhotoDTO dto) {
-        int w = dto.getWidth(), h = dto.getHeight(), c = dto.getChannels();
-        int[] px = dto.getData();
-        if (c != 1 && c != 3) throw new IllegalArgumentException("channels must be 1 or 3");
-        if (px == null) throw new IllegalArgumentException("data is null");
-        if (c == 1 && px.length != w*h) throw new IllegalArgumentException("data length must be width*height");
-        if (c == 3 && px.length != w*h*3) throw new IllegalArgumentException("data length must be width*height*3");
-
-        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-        int i = 0;
-        if (c == 1) {
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    int v = clamp(px[i++]);          // 0..255
-                    int rgb = (v<<16) | (v<<8) | v;  // gray -> RGB
-                    img.setRGB(x, y, rgb);
-                }
-            }
-        } else { // c == 3
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    int r = clamp(px[i++]);
-                    int g = clamp(px[i++]);
-                    int b = clamp(px[i++]);
-                    int rgb = (r<<16) | (g<<8) | b;
-                    img.setRGB(x, y, rgb);
-                }
-            }
+    private static BufferedImage readImage(byte[] bytes) {
+        try {
+            BufferedImage bi = ImageIO.read(new ByteArrayInputStream(bytes));
+            if (bi == null) throw new IllegalArgumentException("Invalid image payload");
+            return bi;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Cannot decode image", e);
         }
-        return toJpeg(img);
     }
-
-    private static int clamp(int v) { return (v < 0 ? 0 : (v > 255 ? 255 : v)); }
 
     private static byte[] toJpeg(BufferedImage img) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -140,5 +93,12 @@ public class CctvService {
         } catch (Exception e) {
             throw new RuntimeException("JPEG encode failed", e);
         }
+    }
+
+    private static TimeOfDay resolveSlot(LocalTime now) {
+        int h = now.getHour();
+        if (h < 11) return TimeOfDay.MORNING;
+        if (h < 16) return TimeOfDay.LUNCH;
+        return TimeOfDay.EVENING;
     }
 }
