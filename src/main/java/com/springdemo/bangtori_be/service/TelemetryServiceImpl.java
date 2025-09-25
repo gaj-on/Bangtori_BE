@@ -15,6 +15,7 @@ import java.util.*;
 public class TelemetryServiceImpl implements TelemetryService {
 
     private final TelemetryRepository telemetryRepository;
+    private final ApplianceAutoService applianceAutoService;
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
 
@@ -32,6 +33,8 @@ public class TelemetryServiceImpl implements TelemetryService {
                 .sensors(sensors)
                 .build();
         telemetryRepository.save(entity);
+
+        applianceAutoService.applyAutoControl(sensors);
     }
 
     @Override

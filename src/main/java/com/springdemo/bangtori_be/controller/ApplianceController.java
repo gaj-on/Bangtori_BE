@@ -4,6 +4,7 @@ import com.springdemo.bangtori_be.dto.ApplianceDTO;
 import com.springdemo.bangtori_be.dto.AppliancePowerDTO;
 import com.springdemo.bangtori_be.model.Appliance;
 import com.springdemo.bangtori_be.repository.ApplianceRepository;
+import com.springdemo.bangtori_be.service.ApplianceAutoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.List;
 public class ApplianceController {
 
     private final ApplianceRepository applianceRepository;
+    private final ApplianceAutoService applianceAutoService;
 
     private long now() { return Instant.now().getEpochSecond(); }
 
@@ -61,5 +63,7 @@ public class ApplianceController {
         a.setOn(isOn);
         applianceRepository.save(a);
     }
+
+
 
 }

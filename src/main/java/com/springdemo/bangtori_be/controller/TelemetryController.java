@@ -1,6 +1,8 @@
 package com.springdemo.bangtori_be.controller;
 
 import com.springdemo.bangtori_be.dto.TelemetryDTO;
+import com.springdemo.bangtori_be.repository.TelemetryRepository;
+import com.springdemo.bangtori_be.service.ApplianceAutoService;
 import com.springdemo.bangtori_be.service.TelemetryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -65,5 +67,6 @@ public class TelemetryController {
     public ResponseEntity<Object> getRange(@RequestParam long from, @RequestParam long toExclusive) {
         return ResponseEntity.ok(telemetryService.getRangeSeries(from, toExclusive));
     }
+
 }
 
