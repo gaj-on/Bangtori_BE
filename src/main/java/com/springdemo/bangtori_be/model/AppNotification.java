@@ -9,4 +9,7 @@ public class AppNotification extends BaseDocument {
     private String title;
     private String message;
     private long time; // 알림 시간(Unix epoch seconds)
+
+    @Builder.Default
+    private boolean isRead = false;
 }

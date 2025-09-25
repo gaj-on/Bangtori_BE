@@ -10,4 +10,6 @@ public class AlertDTO {
     private String message;
     /** 알림 시간 (Unix epoch seconds) */
     private Long time;
+    /** 읽음 여부 */
+    private Boolean isRead;
 }
