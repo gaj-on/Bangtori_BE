@@ -15,8 +15,8 @@ public class ApplianceAutoService {
     private final ApplianceRepository applianceRepository;
 
     // 기준값
-    private static final double CO2_FAN_ON  = 1000.0; // ppm
-    private static final double TVOC_FAN_ON = 400.0;  // ppb
+    private static final double CO2_FAN_ON  = 450.0; // ppm
+    private static final double TVOC_FAN_ON = 50.0;  // ppb
     private static final double PM25_DIRTY  = 10.0;   // μg/m³
 
     private static final double TEMP_AC_ON   = 28.0;  // ℃
@@ -30,7 +30,7 @@ public class ApplianceAutoService {
         Double tvoc = d(sensors, "tvoc");
         Double dust = d(sensors, "dust"); // PM2.5
 
-        // 1) FAN: CO2>1000 OR TVOC>400 OR PM2.5>75
+        // 1) FAN: CO2>1000 OR TVOC>400 OR PM2.5>10
         Boolean fanOn = or(gt(co2, CO2_FAN_ON), gt(tvoc, TVOC_FAN_ON), gt(dust, PM25_DIRTY));
         if (fanOn != null) upsertOn(Appliance.ApplianceType.FAN, fanOn);
 
@@ -42,7 +42,7 @@ public class ApplianceAutoService {
         Boolean heatOn = or(lt(temp, TEMP_HEAT_ON), gt(humi, HUMI_WET));
         if (heatOn != null) upsertOn(Appliance.ApplianceType.HEAT, heatOn);
 
-        // 4) ROBOT: PM2.5>75 AND 현재 OFF이면 → ON (그 외엔 상태 유지)
+        // 4) ROBOT: PM2.5>10 AND 현재 OFF이면 → ON (그 외엔 상태 유지)
         if (dust != null && dust > PM25_DIRTY) {
             boolean currentlyOn = applianceRepository.findByType(Appliance.ApplianceType.ROBOT)
                     .map(Appliance::isOn).orElse(false);
