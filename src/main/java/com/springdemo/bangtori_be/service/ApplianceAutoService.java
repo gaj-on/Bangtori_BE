@@ -17,7 +17,7 @@ public class ApplianceAutoService {
     // 기준값
     private static final double CO2_FAN_ON  = 450.0; // ppm
     private static final double TVOC_FAN_ON = 50.0;  // ppb
-    private static final double PM25_DIRTY  = 10.0;   // μg/m³
+    private static final double PM25_DIRTY  = 5.0;   // μg/m³
 
     private static final double TEMP_AC_ON   = 28.0;  // ℃
     private static final double TEMP_HEAT_ON = 18.0;  // ℃
